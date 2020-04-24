@@ -114,7 +114,7 @@ class Evaluation:
     def run(self):
 
         """
-        Evaluate the performance of the model
+        Splitting, training, evaluating and logging model
         """
 
         # transform
