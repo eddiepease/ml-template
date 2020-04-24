@@ -1,0 +1,9 @@
+Add your data into this directory to be used by the code base. The code currently assumes the following
+
+* the data is held in CSVs
+* the training dataset is called 'train.csv', the testing dataset is called 'test.csv'
+* the training dataset includes a column called 'label' which contains the model labels
+* the data only contains numerical variables
+* there is no missing data
+
+If this is not the case, the code will have to be adjusted, probably in 'transform.py'
