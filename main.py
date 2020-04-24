@@ -9,7 +9,7 @@ def run():
 
     """
 
-    eval = Evaluation(use_saved_model=True)
+    eval = Evaluation(mlflow_record=False)
     eval.run()
 
     # predict = Prediction()

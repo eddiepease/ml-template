@@ -1,2 +1,4 @@
 pandas
 sklearn
+dvc
+mlflow
