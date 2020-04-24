@@ -1,4 +1,6 @@
 import pickle
+import mlflow
+import mlflow.sklearn
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
@@ -11,6 +13,7 @@ class Learner:
 
     def __init__(self):
         self.folder_ml = 'saved_models/'
+        self.n_trees = 100
 
     def train_model(self, X_train, y_train):
 
@@ -25,7 +28,7 @@ class Learner:
         """
 
         print('Fitting model...')
-        self.model = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+        self.model = RandomForestClassifier(n_estimators=self.n_trees, n_jobs=-1)
         self.model.fit(X_train, y_train)
 
     def save_model(self, model_name):
@@ -49,9 +52,9 @@ class Learner:
 
 class Evaluation:
 
-    def __init__(self, use_saved_model=True):
+    def __init__(self, mlflow_record):
+        self.mlflow_record = mlflow_record
         self.validation_pc = 0.2
-        self.use_saved_model = use_saved_model
         self.X, self.y = read_data('data/train.csv', label_bool=True)
         self.transform = Transformation()
         self.learner = Learner()
@@ -80,6 +83,34 @@ class Evaluation:
 
         return X_train, X_valid, y_train, y_valid
 
+    def train_and_evaluate(self, X_train, X_valid, y_train, y_valid):
+
+        """
+
+        Train and evaluate the performance of the model
+
+        :param X_train: training features
+        :type X_train: pandas dataframe
+        :param X_valid: validation features
+        :type X_valid: pandas dataframe
+        :param y_train: training labels
+        :type y_train: pandas dataframe
+        :param y_valid: validation labels
+        :type y_valid: pandas dataframe
+
+        """
+
+        # training
+        print('Training model...')
+        self.learner.train_model(X_train, y_train)
+        # self.learner.save_model(model_name=self.model_name)
+
+        # evaluate
+        print('Evaluating model...')
+        y_valid_pred = self.learner.model.predict(X_valid)
+        self.auc_score = roc_auc_score(y_valid, y_valid_pred)
+        print('AUC score:', self.auc_score)
+
     def run(self):
 
         """
@@ -92,19 +123,19 @@ class Evaluation:
         X_train, X_valid = self.transform.transform_data(X_train=X_train, X_test=X_valid)
 
         # train
-        if self.use_saved_model:
-            print('Loading model...')
-            self.learner.load_model(model_name=self.model_name)
-        else:
-            print('Training model...')
-            self.learner.train_model(X_train, y_train)
-            self.learner.save_model(model_name=self.model_name)
+        if self.mlflow_record:
+            with mlflow.start_run():
 
-        # evaluate
-        print('Evaluating model...')
-        y_valid_pred = self.learner.model.predict(X_valid)
-        auc_score = roc_auc_score(y_valid, y_valid_pred)
-        print('AUC score:', auc_score)
+                self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
+
+                # mlflow logging
+                mlflow.log_param("validation_pc", self.validation_pc)
+                mlflow.log_param("num_trees", self.learner.n_trees)
+                mlflow.log_metric("auc", self.auc_score)
+                mlflow.sklearn.log_model(self.learner.model, "model")
+
+        else:
+            self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
 
 
 class Prediction:
