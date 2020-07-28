@@ -1,3 +1,5 @@
+""" Module to run src files """
+
 from src.ml import Evaluation, Prediction
 
 
@@ -9,8 +11,8 @@ def run():
 
     """
 
-    eval = Evaluation(mlflow_record=False)
-    eval.run()
+    eval_model = Evaluation(mlflow_record=False)
+    eval_model.run()
 
     # predict = Prediction()
     # predict.train_model()

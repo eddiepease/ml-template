@@ -1,9 +1,13 @@
+""" Module to transform data """
+
 import pandas
 
 from src.read_data import read_data
 
 
 class Transformation:
+
+    """ Class to transform the data """
 
     def __init__(self):
         pass

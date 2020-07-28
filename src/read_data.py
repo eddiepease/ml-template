@@ -1,3 +1,5 @@
+""" Module to read data """
+
 import pandas as pd
 
 
@@ -30,4 +32,3 @@ def read_data(file_path, label_bool):
     else:
         X = data
         return X
-

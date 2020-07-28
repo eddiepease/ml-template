@@ -1,3 +1,5 @@
+""" Module to """
+
 import pickle
 import mlflow
 import mlflow.sklearn
@@ -11,9 +13,12 @@ from src.transform import Transformation
 
 class Learner:
 
+    """ Class to train & save the model """
+
     def __init__(self):
         self.folder_ml = 'saved_models/'
         self.n_trees = 100
+        self.model = None
 
     def train_model(self, X_train, y_train):
 
@@ -51,6 +56,8 @@ class Learner:
 
 
 class Evaluation:
+
+    """ Class to evaluate trained model """
 
     def __init__(self, mlflow_record):
         self.mlflow_record = mlflow_record
@@ -108,10 +115,12 @@ class Evaluation:
         # evaluate
         print('Evaluating model...')
         y_valid_pred = self.learner.model.predict(X_valid)
-        self.auc_score = roc_auc_score(y_valid, y_valid_pred)
-        print('AUC score:', self.auc_score)
+        metric = roc_auc_score(y_valid, y_valid_pred)
+        print('AUC score:', metric)
 
-    def run(self):
+        return metric
+
+    def run_single(self, exp_name):
 
         """
         Splitting, training, evaluating and logging model
@@ -124,14 +133,16 @@ class Evaluation:
 
         # train
         if self.mlflow_record:
+
+            mlflow.set_experiment(exp_name)
             with mlflow.start_run():
 
-                self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
+                metric = self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
 
                 # mlflow logging
                 mlflow.log_param("validation_pc", self.validation_pc)
                 mlflow.log_param("num_trees", self.learner.n_trees)
-                mlflow.log_metric("auc", self.auc_score)
+                mlflow.log_metric("auc", metric)
                 mlflow.sklearn.log_model(self.learner.model, "model")
 
         else:
