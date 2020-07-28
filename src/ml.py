@@ -1,10 +1,10 @@
-""" Module to """
+""" Module to train and evaluate ML model and to make predictions from trained models """
 
 import pickle
 import mlflow
 import mlflow.sklearn
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import roc_auc_score
 
 from src.read_data import read_data
@@ -40,6 +40,8 @@ class Learner:
 
         """
         Saving the model using pickle
+        :param model_name: name of model
+        :type model_name: str
         """
 
         filename = model_name + '.pkl'
@@ -49,6 +51,8 @@ class Learner:
 
         """
         Loading the model
+        :param model_name: name of model
+        :type model_name: str
         """
 
         filename = model_name + '.pkl'
@@ -66,6 +70,19 @@ class Evaluation:
         self.transform = Transformation()
         self.learner = Learner()
         self.model_name = 'model_eval'
+
+    def mlflow_logging(self, model_metric):
+
+        """
+        Method to add data to mlflow
+        :param model_metric: output from the model
+        """
+
+        # mlflow logging
+        mlflow.log_param("validation_pc", self.validation_pc)
+        mlflow.log_param("num_trees", self.learner.n_trees)
+        mlflow.log_metric("auc", model_metric)
+        mlflow.sklearn.log_model(self.learner.model, "model")
 
     def split_train_test(self, X, y):
 
@@ -105,10 +122,12 @@ class Evaluation:
         :param y_valid: validation labels
         :type y_valid: pandas dataframe
 
+        :returns:
+            - metric - output model features
+
         """
 
         # training
-        print('Training model...')
         self.learner.train_model(X_train, y_train)
         # self.learner.save_model(model_name=self.model_name)
 
@@ -116,7 +135,6 @@ class Evaluation:
         print('Evaluating model...')
         y_valid_pred = self.learner.model.predict(X_valid)
         metric = roc_auc_score(y_valid, y_valid_pred)
-        print('AUC score:', metric)
 
         return metric
 
@@ -124,6 +142,8 @@ class Evaluation:
 
         """
         Splitting, training, evaluating and logging model
+        :param exp_name: name of experiment
+        :type exp_name: str
         """
 
         # transform
@@ -131,22 +151,54 @@ class Evaluation:
         X_train, X_valid, y_train, y_valid = self.split_train_test(X=self.X, y=self.y)
         X_train, X_valid = self.transform.transform_data(X_train=X_train, X_test=X_valid)
 
-        # train
+        # train and evaluate
         if self.mlflow_record:
-
             mlflow.set_experiment(exp_name)
             with mlflow.start_run():
-
                 metric = self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
-
-                # mlflow logging
-                mlflow.log_param("validation_pc", self.validation_pc)
-                mlflow.log_param("num_trees", self.learner.n_trees)
-                mlflow.log_metric("auc", metric)
-                mlflow.sklearn.log_model(self.learner.model, "model")
-
+                self.mlflow_logging(model_metric=metric)
         else:
-            self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
+            metric = self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
+
+        print('AUC Score:', metric)
+
+    def run_cv(self, exp_name):
+
+        """
+        Splitting, training, evaluating and logging model - cross validation
+        :param exp_name: name of experiment
+        :type exp_name: str
+        """
+
+        kf = KFold(n_splits=5, shuffle=True)
+        metric_list = []
+        count = 0
+
+        # perform CV
+        for train_index, valid_index in kf.split(self.X):
+
+            # counter
+            count += 1
+            print('Run:', count)
+
+            # train data
+            y_train = self.y[train_index]
+            y_valid = self.y[valid_index]
+            X_train, X_valid = self.transform.transform_data(X_train=self.X.loc[train_index, :], X_test=self.X.loc[valid_index, :])
+
+            # run data
+            metric = self.train_and_evaluate(X_train, X_valid, y_train, y_valid)
+            metric_list.append(metric)
+
+        cv_metric = sum(metric_list) / len(metric_list)
+
+        # track results
+        if self.mlflow_record:
+            mlflow.set_experiment(exp_name)
+            with mlflow.start_run():
+                self.mlflow_logging(model_metric=cv_metric)
+
+        print('AUC Score:', cv_metric)
 
 
 class Prediction:

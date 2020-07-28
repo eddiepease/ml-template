@@ -12,7 +12,7 @@ def run():
     """
 
     eval_model = Evaluation(mlflow_record=False)
-    eval_model.run()
+    eval_model.run_single(exp_name='single_run')
 
     # predict = Prediction()
     # predict.train_model()
