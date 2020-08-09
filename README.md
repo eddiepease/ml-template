@@ -39,8 +39,8 @@ Whenever the data changes, simply run the `dvc add [file]` command and commit to
 
 ## Starting to use mlflow
 
-[MLFlow](https://mlflow.org/docs/latest/tracking.html) is a machine learning tracking package which was open-sourced
-by databricks. To start using mlflow, follow the below steps:
+[MLFlow](https://mlflow.org/docs/latest/tracking.html) helps to track and log machine learning experiments. 
+To start using mlflow, follow the below steps:
 
 1. Adjust the code as necessary to fit your data/problem (e.g. you might need to do some data transformation / want to
 use a different ML model / use a different metric)
