@@ -1,4 +1,4 @@
-# ml-workflow
+# Machine Learning Template
 
 This repository helps to solve two problems in local model development for data scientists:
 * A lot of time is often spend in setting up the coding framework
@@ -35,7 +35,7 @@ follow the below steps (for advanced usage, see the website):
 in a human-readable format
 5. `git add data/train.csv.dvc & git commit -m "Add raw data"` - this adds the data to git
 
-Whenever the data changes, simply run the `dvc add ..` command and commit to save into version control
+Whenever the data changes, simply run the `dvc add [file]` command and commit to save into version control.
 
 ## Starting to use mlflow
 
@@ -57,6 +57,8 @@ record the runs which are significant, aiding model analysis
 * Before you record a run in MLFlow, make sure you commit the code (via Git) and the
 data (via dvc). This ensures you have an accurate record in MLFlow on what code and data
 produced the model.
+* When experimenting with new data / new approach, create a fresh branch in git. This uses the power of this framework to make it very easy to compare / switch back to existing setup
+* Use experiments in MLFlow to group together runs
 
 ## Files
 
@@ -74,4 +76,4 @@ train the model, evaluate the model and predict on the test data
 ## Contributing
 
 Please do contribute to improve the repository. If you have an issue with the current code/documentation, do open an issue
-[here](https://github.com/eddiepease/ml-workflow/issues)
+[here](https://github.com/eddiepease/ml-template/issues)
